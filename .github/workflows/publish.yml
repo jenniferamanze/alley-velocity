@@ -11,4 +11,4 @@ jobs:
       run: |
         curl -X POST https://start.ng \
              -H "Content-Type: application/json" \
-             -d '{"repo_url": "https://github.com", "name": "alley-velocity"}'
+             -d '{"repo_url": "https://github.com/jenniferamanze/alley-velocity", "name": "alley-velocity"}'
