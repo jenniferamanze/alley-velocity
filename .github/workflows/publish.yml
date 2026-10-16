@@ -1,0 +1,14 @@
+name: Publish to Start.ng
+
+on:
+  workflow_dispatch: # This adds a manual "Play" button to your GitHub dashboard
+
+jobs:
+  launch-game:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Trigger Start.ng API
+      run: |
+        curl -X POST https://start.ng \
+             -H "Content-Type: application/json" \
+             -d '{"repo_url": "https://github.com", "name": "alley-velocity"}'
