@@ -1,14 +1,30 @@
-name: Publish to Start.ng
+name: Publish to start.ng
 
 on:
-  workflow_dispatch: # This adds a manual "Play" button to your GitHub dashboard
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Run check first, then publish"
+        type: choice
+        options: [check, publish]
+        default: check
 
 jobs:
-  launch-game:
+  startng:
     runs-on: ubuntu-latest
     steps:
-    - name: Trigger Start.ng API
-      run: |
-        curl -X POST https://start.ng \
-             -H "Content-Type: application/json" \
-             -d '{"repo_url": "https://github.com/jenniferamanze/alley-velocity", "name": "alley-velocity"}'
+      - name: Call start.ng games/${{ inputs.action }}
+        run: |
+          status=$(curl -sS -o response.json -w "%{http_code}" \
+            -X POST "https://api.start.ng/games/${{ inputs.action }}" \
+            -H "Content-Type: application/json" \
+            -d '{"repo_url":"https://github.com/jenniferamanze/alley-velocity","name":"alley-velocity"}')
+          echo "HTTP status: $status"
+          echo ""
+          jq . response.json || cat response.json
+          approve=$(jq -r '.approve_url // empty' response.json 2>/dev/null || true)
+          if [ -n "$approve" ]; then
+            echo ""
+            echo "APPROVE LINK: $approve"
+          fi
+          case "$status" in 2*) ;; *) exit 1 ;; esac
