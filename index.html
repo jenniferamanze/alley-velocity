@@ -3,58 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alley Velocity - Start.ng</title>
+    <title>Alley Velocity</title>
     <style>
-        body { margin: 0; background: #1a1a1a; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif; color: white; overflow: hidden; }
-        canvas { background: #222; border: 4px solid #d8fd71; border-radius: 8px; box-shadow: 0 0 20px rgba(216, 253, 113, 0.2); }
-        #instructions { margin-top: 12px; color: #aaa; font-size: 14px; letter-spacing: 0.5px; }
+        * { box-sizing: border-box; }
+        html, body { margin: 0; height: 100%; }
+        body {
+            background: #1a1a1a; color: #fff; font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+            display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px;
+            min-height: 100vh; min-height: 100dvh; overflow: hidden; padding: 8px;
+        }
+        canvas {
+            display: block; height: auto;
+            width: min(92vw, calc((100vh - 110px) * 2 / 3));
+            width: min(92vw, calc((100dvh - 110px) * 2 / 3));
+            background: #222; border: 4px solid #d8fd71; border-radius: 8px;
+            box-shadow: 0 0 20px rgba(216, 253, 113, 0.2);
+            touch-action: none; user-select: none; -webkit-user-select: none;
+        }
+        #instructions { margin: 0; color: #aaa; font-size: 14px; text-align: center; }
+        #signin {
+            border: 0; border-radius: 999px; padding: 8px 16px; background: #d8fd71; color: #1a1a1a;
+            font-weight: 700; font-size: 14px; cursor: pointer;
+        }
+        #signin:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+        [hidden] { display: none !important; }
     </style>
 </head>
 <body>
-    <canvas id="gameCanvas" width="360" height="540"></canvas>
-    <div id="instructions">Use Left and Right Arrow Keys to Dodge Traffic!</div>
-    <script src="game.js"></script>
-
-<!-- TEMPORARY PUBLISH BUTTON: Click this once in your browser to publish your game! -->
-<button id="aiPublishBtn" style="position:fixed; top:20px; right:20px; z-index:9999; padding:15px; background:#d8fd71; color:#000; font-weight:bold; border:none; border-radius:8px; cursor:pointer;">
-    🚀 CLICK TO PUBLISH GAME
-</button>
-
-<script>
-document.getElementById('aiPublishBtn').addEventListener('click', async () => {
-    const btn = document.getElementById('aiPublishBtn');
-    btn.textContent = "Checking...";
-    
-    try {
-        // 1. FIXED: Added 'api.' and '/games/publish' to the URL path
-        const response = await fetch('https://start.ng', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                // 2. FIXED: Clean repository link pointing to your main branch
-                "repo_url": "https://github.com/jenniferamanze/alley-velocity",
-                "name": "alley-velocity"
-            })
-        });
-        
-        const data = await response.json();
-        
-        if (data.approve_url) {
-            btn.style.background = "#00ff88";
-            btn.textContent = "SUCCESS! CLICK TO APPROVE";
-            btn.onclick = () => window.open(data.approve_url, '_blank');
-        } else {
-            btn.style.background = "#ff4757";
-            btn.textContent = "Error: " + (data.detail || "Check console");
-            console.log(data);
-        }
-    } catch (err) {
-        btn.style.background = "#ff4757";
-        btn.textContent = "Connection Failed";
-        alert(err);
-    }
-});
-</script>
-
+    <canvas id="gameCanvas" width="360" height="540" aria-label="Alley Velocity game"></canvas>
+    <p id="instructions">Tap left or right to switch lanes. Arrow keys work too.</p>
+    <button id="signin" hidden>Sign in to save your score</button>
+    <script src="./game.js"></script>
 </body>
 </html>
