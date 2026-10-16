@@ -2,37 +2,143 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#1a1426">
     <title>Alley Velocity</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&display=swap" rel="stylesheet">
     <style>
-        * { box-sizing: border-box; }
-        html, body { margin: 0; height: 100%; }
-        body {
-            background: #1a1a1a; color: #fff; font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-            display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px;
-            min-height: 100vh; min-height: 100dvh; overflow: hidden; padding: 8px;
+        :root {
+            --bg: #1a1426;
+            --ink: #fffaf2;
+            --muted: #c9c3d9;
+            --lime: #d8fd71;
+            --gold: #ffcf4d;
+            --card: rgba(26, 20, 42, 0.86);
+            --tile: rgba(255, 255, 255, 0.07);
+            --line: rgba(255, 255, 255, 0.12);
+            --display: "Chakra Petch", system-ui, -apple-system, "Segoe UI", sans-serif;
+            --text: system-ui, -apple-system, "Segoe UI", sans-serif;
+            --top: max(12px, env(safe-area-inset-top));
+            color-scheme: dark;
         }
-        canvas {
-            display: block; height: auto;
-            width: min(92vw, calc((100vh - 110px) * 2 / 3));
-            width: min(92vw, calc((100dvh - 110px) * 2 / 3));
-            background: #222; border: 4px solid #d8fd71; border-radius: 8px;
-            box-shadow: 0 0 20px rgba(216, 253, 113, 0.2);
-            touch-action: none; user-select: none; -webkit-user-select: none;
-        }
-        #instructions { margin: 0; color: #aaa; font-size: 14px; text-align: center; }
-        #signin {
-            border: 0; border-radius: 999px; padding: 8px 16px; background: #d8fd71; color: #1a1a1a;
-            font-weight: 700; font-size: 14px; cursor: pointer;
-        }
-        #signin:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+        html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); font-family: var(--text); overflow: hidden; }
+        #game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; user-select: none; -webkit-user-select: none; }
+
+        /* Heads-up display */
+        #hud { position: fixed; top: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: var(--top) 14px 0; pointer-events: none; }
+        #who { display: flex; align-items: center; gap: 10px; min-width: 0; max-width: 60vw; padding: 6px 16px 6px 6px; border-radius: 999px; background: rgba(20, 15, 32, 0.72); border: 1px solid var(--line); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+        #face { width: 40px; height: 40px; flex: none; border-radius: 50%; background: var(--lime); box-shadow: 0 0 0 2px var(--lime); }
+        .who-text { min-width: 0; padding-left: 4px; }
+        .who-text b { display: block; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .who-text span { display: block; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        #run { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+        #distance { font: 700 34px/1 var(--display); text-shadow: 0 2px 14px rgba(0, 0, 0, 0.55); }
+        #distance small { margin-left: 3px; font-size: 16px; color: var(--muted); }
+        #coins { display: inline-flex; align-items: center; gap: 7px; padding: 5px 12px 5px 8px; border-radius: 999px; background: rgba(20, 15, 32, 0.72); border: 1px solid var(--line); font: 700 17px/1 var(--display); color: var(--gold); }
+        #coins.pop { animation: pop 0.25s ease-out; }
+        .coin { width: 16px; height: 16px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff3b0, #ffcf4d 45%, #c98a00); box-shadow: inset 0 0 0 1.5px #a86f00; }
+        .pill { border: 0; border-radius: 999px; padding: 8px 16px; background: var(--lime); color: #17151c; font: 700 14px var(--text); cursor: pointer; }
+        #signin { position: fixed; left: 14px; top: calc(var(--top) + 62px); }
+        #hint { position: fixed; left: 50%; top: 40%; transform: translateX(-50%); margin: 0; padding: 10px 18px; border-radius: 999px; background: rgba(20, 15, 32, 0.8); font-weight: 700; font-size: 15px; white-space: nowrap; pointer-events: none; transition: opacity 0.6s; }
+        #hint.gone { opacity: 0; }
+
+        /* Run summary */
+        #summary { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); box-sizing: border-box; width: min(92vw, 560px); max-height: 94vh; max-height: 94dvh; overflow: auto; padding: 32px 28px 28px; border-radius: 32px; background: var(--card); border: 1px solid var(--line); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5); text-align: center; }
+        #summary.show { animation: rise 0.35s ease-out; }
+        #summary h1 { margin: 0 0 22px; font: 700 34px/1.1 var(--display); }
+        .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .tile { padding: 16px 6px 14px; border-radius: 18px; background: var(--tile); }
+        .tile span { display: block; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+        .tile b { display: block; margin-top: 8px; font: 500 38px/1 var(--display); }
+        .tile b small { font-size: 0.45em; margin-left: 2px; color: var(--muted); }
+        #s-message { min-height: 1.3em; margin: 20px 0 0; font-size: 16px; color: var(--gold); }
+        #board h2 { margin: 24px 0 8px; font-size: 13px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); }
+        #board table { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 0 6px; font-size: 15px; }
+        #board th { padding: 0 12px; font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); text-align: right; }
+        #board td { padding: 11px 12px; background: rgba(255, 255, 255, 0.04); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        #board .rank { width: 44px; }
+        #board .num { width: 92px; }
+        #board .coins-col { width: 64px; }
+        #board .player { text-align: left; }
+        #board td.rank { color: var(--muted); border-radius: 14px 0 0 14px; }
+        #board td:last-child { border-radius: 0 14px 14px 0; }
+        #board tr.me td { background: rgba(255, 207, 77, 0.12); box-shadow: inset 0 1px 0 rgba(255, 207, 77, 0.45), inset 0 -1px 0 rgba(255, 207, 77, 0.45); }
+        #board tr.me td.rank { box-shadow: inset 1px 1px 0 rgba(255, 207, 77, 0.45), inset 0 -1px 0 rgba(255, 207, 77, 0.45); }
+        #board tr.me td:last-child { box-shadow: inset -1px 1px 0 rgba(255, 207, 77, 0.45), inset 0 -1px 0 rgba(255, 207, 77, 0.45); }
+        #board tr.gap td { padding: 0 12px; background: none; color: var(--muted); text-align: center; }
+        .link { margin-top: 16px; border: 0; background: none; color: var(--lime); font: 600 15px var(--text); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+        #again { display: block; width: 100%; height: 62px; margin-top: 24px; border: 0; border-radius: 20px; background: var(--lime); color: #17151c; font: 700 20px var(--display); cursor: pointer; }
+        #again:focus-visible, .pill:focus-visible, .link:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+
+        #loading { position: fixed; inset: 0; display: grid; place-items: center; margin: 0; padding: 24px; background: var(--bg); color: var(--muted); font: 600 16px var(--text); text-align: center; }
         [hidden] { display: none !important; }
+
+        @media (max-width: 440px) {
+            #summary { padding: 24px 16px 18px; border-radius: 26px; }
+            #summary h1 { font-size: 28px; margin-bottom: 18px; }
+            .tile { padding: 12px 4px; border-radius: 14px; }
+            .tile b { font-size: 28px; }
+            .tile span { font-size: 10.5px; letter-spacing: 0.1em; }
+            #board td, #board th { padding-left: 8px; padding-right: 8px; }
+            #board .num { width: 78px; }
+            #board .rank { width: 34px; }
+            #distance { font-size: 28px; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            #summary.show, #coins.pop { animation: none; }
+        }
+        @keyframes rise { from { opacity: 0; transform: translate(-50%, -46%); } to { opacity: 1; transform: translate(-50%, -50%); } }
+        @keyframes pop { 50% { transform: scale(1.18); } }
     </style>
+    <script type="importmap">
+        { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js" } }
+    </script>
 </head>
 <body>
-    <canvas id="gameCanvas" width="360" height="540" aria-label="Alley Velocity game"></canvas>
-    <p id="instructions">Tap left or right to switch lanes. Arrow keys work too.</p>
-    <button id="signin" hidden>Sign in to save your score</button>
-    <script src="./game.js"></script>
+    <canvas id="game" aria-label="Alley Velocity: tap left or right to switch lanes and collect coins"></canvas>
+
+    <div id="hud">
+        <div id="who">
+            <img id="face" alt="" hidden>
+            <div class="who-text"><b id="name">Guest</b><span id="account">Not signed in</span></div>
+        </div>
+        <div id="run">
+            <div id="distance"><span id="distance-value">0</span><small>m</small></div>
+            <div id="coins"><i class="coin"></i><span id="coins-value">0</span></div>
+        </div>
+    </div>
+    <button id="signin" class="pill" hidden>Sign in to save your run</button>
+    <p id="hint">Tap left or right to switch lanes</p>
+
+    <section id="summary" hidden aria-live="polite">
+        <h1>Wiped out</h1>
+        <div class="tiles">
+            <div class="tile"><span>Distance</span><b id="s-distance">0</b></div>
+            <div class="tile"><span>Coins</span><b id="s-coins">0</b></div>
+            <div class="tile"><span>Best</span><b id="s-best">0</b></div>
+        </div>
+        <p id="s-message"></p>
+        <div id="board" hidden>
+            <h2>Top players</h2>
+            <table>
+                <thead><tr><th class="rank">#</th><th class="player">Player</th><th class="num">Distance</th><th class="coins-col">Coins</th></tr></thead>
+                <tbody id="board-rows"></tbody>
+            </table>
+        </div>
+        <button id="s-signin" class="link" hidden>Sign in to save your run</button>
+        <button id="again">Play again</button>
+    </section>
+
+    <p id="loading">Loading the alley…</p>
+    <script>
+        // If the game hasn't started after 20 seconds, say so instead of showing a blank screen.
+        setTimeout(function () {
+            var el = document.getElementById("loading");
+            if (el && !el.hidden) el.textContent = "The game couldn't load. Check your connection and refresh the page.";
+        }, 20000);
+    </script>
+    <script type="module" src="./game.js"></script>
 </body>
 </html>
